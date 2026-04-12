@@ -6,3 +6,10 @@ build/
 server/uploads/*
 !server/uploads/.gitkeep
 .DS_Store
+client/node_modules/
+server/node_modules/
+
+.vscode/
+.idea/
+
+Thumbs.db
