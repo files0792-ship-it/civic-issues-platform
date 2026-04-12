@@ -23,8 +23,10 @@ app.use(
 );
 app.use(express.json());
 
-// Uploaded images served statically
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use(
+  '/uploads',
+  express.static(path.join(process.cwd(), 'uploads'))
+);
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'civic-issues-api' });
