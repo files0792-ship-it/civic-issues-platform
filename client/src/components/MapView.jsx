@@ -2,14 +2,14 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-
-delete L.Icon.Default.prototype._getIconUrl;
-
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+const customIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
 });
+
 
 export default function MapView({ issues }) {
   return (
@@ -24,7 +24,7 @@ export default function MapView({ issues }) {
 
       {issues.map((issue) =>
         issue.coordinates ? (
-          <Marker key={issue.id} position={issue.coordinates}>
+          <Marker key={issue.id} position={issue.coordinates} icon={customIcon}>
             <Popup>
               <strong>{issue.title}</strong>
               <br />
