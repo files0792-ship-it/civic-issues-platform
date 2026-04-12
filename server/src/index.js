@@ -18,8 +18,7 @@ app.set('trust proxy', 1);
 
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
-    credentials: true,
+    origin: '*',
   })
 );
 app.use(express.json());
