@@ -10,7 +10,7 @@ const customIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
-
+console.log("ICON:", customIcon);
 export default function MapView({ issues }) {
   return (
     <MapContainer
