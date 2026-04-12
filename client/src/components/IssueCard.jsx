@@ -15,7 +15,7 @@ export default function IssueCard({
     <article className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md">
       {issue.imageUrl && (
         <div className="aspect-video w-full overflow-hidden bg-slate-100">
-          <img src={`${import.meta.env.VITE_API_URL}/uploads/${issue.image}`} alt="" className="h-full w-full object-cover" loading="lazy" />
+          <img src={`${import.meta.env.VITE_API_URL}/uploads/${issue.image.replace(/\/$/, '')}`} alt="" className="h-full w-full object-cover" loading="lazy" />
         </div>
       )}
       <div className="p-4 sm:p-5">
