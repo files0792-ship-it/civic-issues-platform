@@ -12,6 +12,7 @@ export default function IssueCard({
   upvoting = false,
 
 }) {
+  console.log(issue.imageUrl)
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md">
       {issue.imageUrl && (
