@@ -10,14 +10,20 @@ export default function IssueCard({
   onStatusChange,
   statusUpdating = false,
   upvoting = false,
+
 }) {
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md">
       {issue.imageUrl && (
-        <div className="aspect-video w-full overflow-hidden bg-slate-100">
-          <img src={`${import.meta.env.VITE_API_URL}/uploads/${issue.image.replace(/\/$/, '')}`} alt="" className="h-full w-full object-cover" loading="lazy" />
-        </div>
-      )}
+  <div className="aspect-video w-full overflow-hidden bg-slate-100">
+    <img
+      src={issue.imageUrl}
+      alt=""
+      className="h-full w-full object-cover"
+      loading="lazy"
+    />
+  </div>
+)}
       <div className="p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="font-display text-lg font-semibold text-slate-900">{issue.title}</h3>
