@@ -23,12 +23,20 @@ export function shapeIssue(doc, userId = null, req = null) {
   const upvoteIds = (o.upvotes || []).map((id) => id.toString());
   const upvoteCount = upvoteIds.length;
   const hasUpvoted = userId ? upvoteIds.includes(userId.toString()) : false;
+  
+  let displayLocation = o.location ?? null;
+  if (o.city && o.state) {
+    displayLocation = `${o.city}, ${o.state}`;
+  }
+
   return {
     id: o._id,
     title: o.title,
     description: o.description,
     imageUrl: publicImageUrl(o.image, req),
-    location: o.location ?? null,
+    location: displayLocation,
+    state: o.state ?? null,
+    city: o.city ?? null,
     status: o.status,
     upvoteCount,
     hasUpvoted,

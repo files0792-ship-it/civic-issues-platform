@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext.jsx';
 import IssueCard from '../components/IssueCard.jsx';
-import CitySelect from '../components/CitySelect.jsx';
+import SearchableDropdown from '../components/SearchableDropdown.jsx';
 import MapView from '../components/MapView.jsx';
-
+import {
+  getIndianStates,
+  getIndianCities,
+  getIndianStateName,
+  getGeocodeQuery,
+} from '../utils/indianLocations.js';
 
 const STATUSES = ['', 'Pending', 'In Progress', 'Resolved'];
 const SORTS = [
@@ -14,30 +19,57 @@ const SORTS = [
   { value: 'priority', label: 'Priority' },
 ];
 
-async function getCoordinates(city) {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${city}`
-  );
-  const data = await res.json();
+const geoCache = {};
 
-  if (data.length > 0) {
-    return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+async function getCoordinates(query) {
+  if (!query) return null;
+  const trimmed = query.trim();
+  if (geoCache[trimmed] !== undefined) {
+    return geoCache[trimmed];
   }
 
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmed)}`
+    );
+    const data = await res.json();
+
+    if (data && data.length > 0) {
+      const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+      geoCache[trimmed] = coords;
+      return coords;
+    }
+  } catch (err) {
+    console.error(`Failed to get coordinates for ${trimmed}:`, err);
+  }
+
+  geoCache[trimmed] = null;
   return null;
 }
+
 export default function Home() {
   const { user, token } = useAuth();
-  const [view, setView] = useState('list'); // list | compact
+  const [view, setView] = useState('list');
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [sort, setSort] = useState('priority');
   const [q, setQ] = useState('');
+  const [stateCode, setStateCode] = useState('');
   const [city, setCity] = useState('');
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
   const [upvotingId, setUpvotingId] = useState(null);
+
+  const stateOptions = useMemo(
+    () => [{ value: '', label: 'All States' }, ...getIndianStates()],
+    []
+  );
+
+  const cityOptions = useMemo(() => {
+    const cities = getIndianCities(stateCode);
+    return [{ value: '', label: 'All Cities' }, ...cities];
+  }, [stateCode]);
 
   const fetchIssues = useCallback(async () => {
     setLoading(true);
@@ -46,70 +78,62 @@ export default function Home() {
       const params = { sort };
       if (status) params.status = status;
       if (q.trim()) params.q = q.trim();
-      if (city) params.location = city;
+      if (stateCode) params.state = getIndianStateName(stateCode);
+      if (city) params.city = city;
       const { data } = await api.get('/api/issues', { params });
       const issuesData = data.issues || [];
-      
 
-      const updated = await Promise.all(
-  issuesData.map(async (issue) => {
-    const coords = await getCoordinates(issue.location);
-    return { ...issue, coordinates: coords };
-  })
-);
+      const updatedIssues = await Promise.all(
+        issuesData.map(async (issue) => {
+          const coordinates = await getCoordinates(getGeocodeQuery(issue));
+          return { ...issue, coordinates };
+        })
+      );
 
-setIssues(updated);
+      setIssues(updatedIssues);
     } catch (err) {
       setError(err.response?.data?.message || 'Could not load issues. Is the API running?');
     } finally {
       setLoading(false);
     }
-  }, [sort, status, q, city]);
+  }, [sort, status, q, stateCode, city]);
 
   useEffect(() => {
     fetchIssues();
   }, [fetchIssues]);
 
   async function handleUpvote(issue) {
-    
     if (!token) {
       alert('Please log in to upvote issues.');
       return;
     }
-    
+
     setUpvotingId(issue.id);
     setError('');
-    
-    // Create a copy of the original issue for potential revert
+
     const originalIssue = { ...issue };
-    
-    // Calculate new upvote count and priority
     const newUpvoteCount = issue.hasUpvoted ? Math.max(0, issue.upvoteCount - 1) : issue.upvoteCount + 1;
     const newPriority = Math.min(100, newUpvoteCount * 10);
-    
-    // Optimistic update - update UI immediately with proper immutability
+
     const optimisticUpdate = {
       ...issue,
       hasUpvoted: !issue.hasUpvoted,
       upvoteCount: newUpvoteCount,
-      predictedPriority: newPriority
+      predictedPriority: newPriority,
     };
-    
-    // Update state using functional form to ensure proper re-rendering
-    setIssues(prevIssues => 
-      prevIssues.map(i => i.id === issue.id ? optimisticUpdate : i)
+
+    setIssues((prevIssues) =>
+      prevIssues.map((i) => (i.id === issue.id ? optimisticUpdate : i))
     );
-    
+
     try {
       const { data } = await api.post(`/api/issues/${issue.id}/upvote`);
-      // Update with server response, ensuring we use the latest data
-      setIssues(prevIssues => 
-        prevIssues.map(i => i.id === data.id ? { ...data } : i)
+      setIssues((prevIssues) =>
+        prevIssues.map((i) => (i.id === data.id ? { ...data } : i))
       );
     } catch (err) {
-      // Revert optimistic update on error
-      setIssues(prevIssues => 
-        prevIssues.map(i => i.id === issue.id ? originalIssue : i)
+      setIssues((prevIssues) =>
+        prevIssues.map((i) => (i.id === issue.id ? originalIssue : i))
       );
       setError(err.response?.data?.message || 'Upvote failed. Please try again.');
     } finally {
@@ -119,37 +143,31 @@ setIssues(updated);
 
   async function handleStatusChange(issue, newStatus) {
     if (!user || !token || newStatus === issue.status) return;
-    
+
     setStatusUpdatingId(issue.id);
     setError('');
-    
-    // Create a copy of the original issue for potential revert
+
     const originalIssue = { ...issue };
-    
-    // Optimistic update - update UI immediately
     const optimisticUpdate = {
       ...issue,
       status: newStatus,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
-    
-    // Update state using functional form to ensure proper re-rendering
-    setIssues(prevIssues => 
-      prevIssues.map(i => i.id === issue.id ? optimisticUpdate : i)
+
+    setIssues((prevIssues) =>
+      prevIssues.map((i) => (i.id === issue.id ? optimisticUpdate : i))
     );
-    
+
     try {
       const { data } = await api.patch(`/api/issues/${issue.id}/status`, { status: newStatus });
       if (data.issue) {
-        // Update with server response, ensuring we use the latest data
-        setIssues(prevIssues => 
-          prevIssues.map(i => i.id === data.issue.id ? { ...data.issue } : i)
+        setIssues((prevIssues) =>
+          prevIssues.map((i) => (i.id === data.issue.id ? { ...data.issue } : i))
         );
       }
     } catch (err) {
-      // Revert optimistic update on error
-      setIssues(prevIssues => 
-        prevIssues.map(i => i.id === issue.id ? originalIssue : i)
+      setIssues((prevIssues) =>
+        prevIssues.map((i) => (i.id === issue.id ? originalIssue : i))
       );
       setError(err.response?.data?.message || 'Could not update status. You may need to log in again.');
     } finally {
@@ -165,7 +183,7 @@ setIssues(updated);
           <p className="mt-1 text-slate-600">Civic issues by city — upvote to prioritize.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {['list', 'compact','map'].map((v) => (
+          {['list', 'compact', 'map'].map((v) => (
             <button
               key={v}
               type="button"
@@ -181,25 +199,33 @@ setIssues(updated);
       </div>
 
       <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end">
-        <div className="grid w-full gap-3 sm:grid-cols-2 lg:max-w-2xl lg:flex-1">
+        <div className="grid w-full gap-3 sm:grid-cols-2 lg:max-w-3xl lg:flex-1">
           <input
             type="search"
             placeholder="Search issues…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && fetchIssues()}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none ring-civic-500 focus:ring-2"
+            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none ring-civic-500 focus:ring-2 sm:col-span-2"
           />
-          <div className="min-w-0 sm:col-span-2 lg:col-span-1">
-            <CitySelect
-              id="feed-city"
-              label="City"
-              value={city}
-              onChange={setCity}
-              allowEmpty
-              emptyLabel="All cities"
-            />
-          </div>
+          <SearchableDropdown
+            label="State"
+            options={stateOptions}
+            value={stateCode}
+            onChange={(val) => {
+              setStateCode(val);
+              setCity('');
+            }}
+            placeholder="All States"
+          />
+          <SearchableDropdown
+            label="City"
+            disabled={!stateCode}
+            options={cityOptions}
+            value={city}
+            onChange={setCity}
+            placeholder={stateCode ? 'All Cities' : 'Select State First'}
+          />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <select
@@ -241,13 +267,11 @@ setIssues(updated);
       )}
 
       {loading ? (
-  <p className="mt-10 text-center text-slate-500">Loading issues…</p>
-) : view === "map" ? (
-  <MapView
-    issues={issues}
-  />
-) : (
-  <div className="mt-8 space-y-4">
+        <p className="mt-10 text-center text-slate-500">Loading issues…</p>
+      ) : view === 'map' ? (
+        <MapView issues={issues} />
+      ) : (
+        <div className="mt-8 space-y-4">
           {!user && (
             <p className="text-sm text-slate-500">
               Log in to upvote, change issue status, and submit new reports.

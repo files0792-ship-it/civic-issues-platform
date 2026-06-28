@@ -1,32 +1,47 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import SearchableDropdown from '../components/SearchableDropdown.jsx';
+import { getIndianStates, getIndianCities, getIndianStateName } from '../utils/indianLocations.js';
 
 
 export default function SubmitIssue() {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
+  const [selectedStateCode, setSelectedStateCode] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
   const [image, setImage] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const states = useMemo(() => getIndianStates(), []);
+  const cities = useMemo(() => getIndianCities(selectedStateCode), [selectedStateCode]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setSuccess('');
-    if (!location.trim()) {
+    
+    if (!selectedStateCode) {
+      setError('Please select a state.');
+      return;
+    }
+    if (!selectedCity) {
       setError('Please select a city.');
       return;
     }
+    
     setSubmitting(true);
     try {
+      const stateName = getIndianStateName(selectedStateCode);
       const form = new FormData();
       form.append('title', title);
       form.append('description', description);
-      form.append('location', location);
+      form.append('state', stateName);
+      form.append('city', selectedCity);
+      form.append('location', `${selectedCity}, ${stateName}`);
       if (image) form.append('image', image);
 
       const { data } = await api.post('/api/issues', form, {
@@ -82,18 +97,29 @@ export default function SubmitIssue() {
           />
         </div>
 
-        <div>
-  <label className="block text-sm font-medium text-slate-700">
-    City
-  </label>
-  <input
-    type="text"
-    placeholder="Enter city (e.g. Delhi, Jaipur, New York)"
-    value={location}
-    onChange={(e) => setLocation(e.target.value)}
-    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:ring-2 ring-civic-500"
-  />
-</div>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <SearchableDropdown
+            label="State"
+            required
+            options={states}
+            value={selectedStateCode}
+            onChange={(val) => {
+              setSelectedStateCode(val);
+              setSelectedCity('');
+            }}
+            placeholder="Select State"
+          />
+
+          <SearchableDropdown
+            label="City"
+            required
+            disabled={!selectedStateCode}
+            options={cities}
+            value={selectedCity}
+            onChange={setSelectedCity}
+            placeholder={selectedStateCode ? "Select City" : "Select State First"}
+          />
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-700">Photo (optional)</label>

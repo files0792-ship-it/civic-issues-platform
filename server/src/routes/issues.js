@@ -12,7 +12,7 @@ const router = Router();
 /** GET /api/issues — public feed with optional filters */
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const { status, sort = 'newest', location: locationQuery, q, page = '1', limit = '20' } = req.query;
+    const { status, sort = 'newest', location: locationQuery, state: stateQuery, city: cityQuery, q, page = '1', limit = '20' } = req.query;
 
     const filter = {};
     if (status) filter.status = status;
@@ -20,9 +20,19 @@ router.get('/', optionalAuth, async (req, res) => {
     if (q && String(q).trim()) {
       filter.$text = { $search: String(q).trim() };
     }
-if (locationQuery && String(locationQuery).trim()) {
-  filter.location = locationQuery;
-}
+    if (stateQuery && String(stateQuery).trim()) {
+      filter.state = new RegExp(`^${String(stateQuery).trim()}$`, 'i');
+    }
+    if (cityQuery && String(cityQuery).trim()) {
+      filter.city = new RegExp(`^${String(cityQuery).trim()}$`, 'i');
+    }
+    if (locationQuery && String(locationQuery).trim()) {
+      const queryStr = String(locationQuery).trim();
+      filter.$or = [
+        { city: new RegExp(`^${queryStr}$`, 'i') },
+        { location: new RegExp(`^${queryStr}$`, 'i') }
+      ];
+    }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
@@ -81,17 +91,25 @@ router.get('/:id', optionalAuth, async (req, res) => {
   }
 });
 
-/** POST /api/issues — multipart: title, description, location (city), optional image */
+/** POST /api/issues — multipart: title, description, state, city, location, optional image */
 router.post('/', authenticate, uploadImage.single('image'), async (req, res) => {
   try {
-    const { title, description } = req.body;
-const location = req.body.location?.trim().toLowerCase();
+    const { title, description, state, city } = req.body;
+    let location = req.body.location;
 
-if (!title || !description || !location) {
-  return res.status(400).json({ 
-    message: 'title, description and location are required' 
-  });
-}
+    if (state && city) {
+      location = `${city.trim()}, ${state.trim()}`;
+    }
+
+    if (!title || !description || (!location && (!state || !city))) {
+      return res.status(400).json({ 
+        message: 'title, description, and location (or state and city) are required' 
+      });
+    }
+
+    const finalLocation = location?.trim();
+    const finalState = state?.trim();
+    const finalCity = city?.trim();
     
 
     const imageRelative = req.file ? path.join('issues', req.file.filename).replace(/\\/g, '/') : null;
@@ -119,7 +137,9 @@ if (!title || !description || !location) {
       title,
       description,
       image: imageRelative,
-      location,
+      location: finalLocation,
+      state: finalState,
+      city: finalCity,
       createdBy: req.user.id,
       predictedPriority,
       possibleDuplicateOf,

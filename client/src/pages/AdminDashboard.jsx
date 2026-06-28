@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client';
 import StatusBadge from '../components/StatusBadge.jsx';
-import CitySelect from '../components/CitySelect.jsx';
+import SearchableDropdown from '../components/SearchableDropdown.jsx';
 import { ISSUE_STATUSES } from '../constants/issueStatus.js';
+import {
+  getIndianStates,
+  getIndianCities,
+  getIndianStateName,
+} from '../utils/indianLocations.js';
 
 export default function AdminDashboard() {
   const [issues, setIssues] = useState([]);
@@ -12,9 +17,20 @@ export default function AdminDashboard() {
   const [status, setStatus] = useState('');
   const [sort, setSort] = useState('newest');
   const [q, setQ] = useState('');
+  const [stateCode, setStateCode] = useState('');
   const [city, setCity] = useState('');
   const [pMin, setPMin] = useState('');
   const [pMax, setPMax] = useState('');
+
+  const stateOptions = useMemo(
+    () => [{ value: '', label: 'All States' }, ...getIndianStates()],
+    []
+  );
+
+  const cityOptions = useMemo(() => {
+    const cities = getIndianCities(stateCode);
+    return [{ value: '', label: 'All Cities' }, ...cities];
+  }, [stateCode]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -23,7 +39,8 @@ export default function AdminDashboard() {
       const params = { sort };
       if (status) params.status = status;
       if (q.trim()) params.q = q.trim();
-      if (city) params.location = city;
+      if (stateCode) params.state = getIndianStateName(stateCode);
+      if (city) params.city = city;
       if (pMin !== '') params.priorityMin = pMin;
       if (pMax !== '') params.priorityMax = pMax;
       const { data } = await api.get('/api/admin/issues', { params });
@@ -33,7 +50,7 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [status, sort, q, city, pMin, pMax]);
+  }, [status, sort, q, stateCode, city, pMin, pMax]);
 
   useEffect(() => {
     load();
@@ -113,14 +130,24 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-          <div className="flex-1 max-w-xs">
-            <CitySelect
-              id="admin-city"
+          <div className="grid flex-1 gap-4 sm:grid-cols-2 max-w-xl">
+            <SearchableDropdown
+              label="State"
+              options={stateOptions}
+              value={stateCode}
+              onChange={(val) => {
+                setStateCode(val);
+                setCity('');
+              }}
+              placeholder="All States"
+            />
+            <SearchableDropdown
               label="City"
+              disabled={!stateCode}
+              options={cityOptions}
               value={city}
               onChange={setCity}
-              allowEmpty
-              emptyLabel="All cities"
+              placeholder={stateCode ? 'All Cities' : 'Select State First'}
             />
           </div>
           <div className="flex items-end gap-3">
@@ -189,7 +216,7 @@ export default function AdminDashboard() {
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
                       <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
-                        {row.location ?? 'â'}
+                        {row.location ?? '—'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

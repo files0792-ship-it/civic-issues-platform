@@ -19,6 +19,14 @@ const issueSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    state: {
+      type: String,
+      trim: true,
+    },
+    city: {
+      type: String,
+      trim: true,
+    },
     status: {
       type: String,
       enum: ISSUE_STATUSES,
@@ -35,8 +43,10 @@ const issueSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-/** Standard B-tree index for equality filters (not 2dsphere / not geospatial). */
+/** Standard B-tree indexes for equality filters (not 2dsphere / not geospatial). */
 issueSchema.index({ location: 1 });
+issueSchema.index({ state: 1 });
+issueSchema.index({ city: 1 });
 issueSchema.index({ status: 1, createdAt: -1 });
 issueSchema.index({ title: 'text', description: 'text' });
 

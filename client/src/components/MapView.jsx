@@ -1,28 +1,36 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "leaflet/dist/leaflet.css";
+import { getIssueGroupKey } from "../utils/indianLocations.js";
 
 export default function MapView({ issues }) {
   const [hoveredLocation, setHoveredLocation] = useState(null);
 
-  // Group issues by coordinates
+  // Group issues by city + state (or legacy location string)
   const groupedIssues = issues.reduce((acc, issue) => {
-    if (!issue.coordinates) return acc;
-    
-    const key = JSON.stringify(issue.coordinates);
-    if (!acc[key]) {
-      acc[key] = {
-        coordinates: issue.coordinates,
+    const groupKey = getIssueGroupKey(issue);
+    if (!groupKey) return acc;
+
+    if (!acc[groupKey]) {
+      acc[groupKey] = {
+        coordinates: null,
         location: issue.location,
-        issues: []
+        issues: [],
       };
     }
-    acc[key].issues.push(issue);
+
+    acc[groupKey].issues.push(issue);
+
+    if (!acc[groupKey].coordinates && issue.coordinates) {
+      acc[groupKey].coordinates = issue.coordinates;
+    }
+
     return acc;
   }, {});
 
-  const locationGroups = Object.values(groupedIssues);
+  // Only keep groups that have valid coordinates
+  const locationGroups = Object.values(groupedIssues).filter(group => group.coordinates !== null);
 
   // Create custom icons for normal and hover states
   const normalIcon = L.icon({

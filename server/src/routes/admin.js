@@ -4,7 +4,6 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { Issue } from '../models/Issue.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
-import { normalizeCityName } from '../constants/cities.js';
 
 const router = Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -21,6 +20,8 @@ router.get('/issues', async (req, res) => {
       priorityMin,
       priorityMax,
       location: locationQuery,
+      state: stateQuery,
+      city: cityQuery,
       q,
       page = '1',
       limit = '50',
@@ -36,12 +37,18 @@ router.get('/issues', async (req, res) => {
       if (priorityMax != null) filter.predictedPriority.$lte = Number(priorityMax);
     }
 
+    if (stateQuery && String(stateQuery).trim()) {
+      filter.state = new RegExp(`^${String(stateQuery).trim()}$`, 'i');
+    }
+    if (cityQuery && String(cityQuery).trim()) {
+      filter.city = new RegExp(`^${String(cityQuery).trim()}$`, 'i');
+    }
     if (locationQuery != null && String(locationQuery).trim()) {
-      const city = normalizeCityName(locationQuery);
-      if (!city) {
-        return res.status(400).json({ message: 'Invalid location: must be a supported city' });
-      }
-      filter.location = city;
+      const queryStr = String(locationQuery).trim();
+      filter.$or = [
+        { city: new RegExp(`^${queryStr}$`, 'i') },
+        { location: new RegExp(`^${queryStr}$`, 'i') }
+      ];
     }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -62,12 +69,20 @@ router.get('/issues', async (req, res) => {
     const shaped = items.map((doc) => {
       const o = doc.toObject();
       const upvoteCount = (o.upvotes || []).length;
+      
+      let displayLocation = o.location ?? null;
+      if (o.city && o.state) {
+        displayLocation = `${o.city}, ${o.state}`;
+      }
+
       return {
         id: o._id,
         title: o.title,
         description: o.description,
         imageUrl: o.image ? `${base}/uploads/${o.image.replace(/^\//, '')}` : null,
-        location: o.location ?? null,
+        location: displayLocation,
+        state: o.state ?? null,
+        city: o.city ?? null,
         status: o.status,
         upvoteCount,
         predictedPriority: o.predictedPriority,
