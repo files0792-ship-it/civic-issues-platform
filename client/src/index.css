@@ -5,3 +5,17 @@
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
+
+/* Smooth hover animation for map markers */
+.hover-marker {
+  transition: transform 0.2s ease-in-out;
+}
+
+.leaflet-marker-icon {
+  transition: transform 0.2s ease-in-out, filter 0.2s ease-in-out;
+}
+
+.leaflet-marker-icon:hover {
+  transform: scale(1.1);
+  filter: brightness(1.1);
+}

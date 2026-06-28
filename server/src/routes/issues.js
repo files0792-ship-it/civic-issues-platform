@@ -40,7 +40,7 @@ if (locationQuery && String(locationQuery).trim()) {
 
     const uid = req.user?.id;
     res.json({
-      issues: items.map((d) => shapeIssue(d, uid)),
+      issues: items.map((d) => shapeIssue(d, uid, req)),
       page: pageNum,
       limit: limitNum,
       total,
@@ -64,7 +64,7 @@ router.patch('/:id/status', authenticate, async (req, res) => {
       { new: true }
     ).populate('createdBy', 'name email');
     if (!issue) return res.status(404).json({ message: 'Issue not found' });
-    res.json({ issue: shapeIssue(issue, req.user.id) });
+    res.json({ issue: shapeIssue(issue, req.user.id, req) });
   } catch {
     res.status(400).json({ message: 'Invalid request' });
   }
@@ -75,7 +75,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const doc = await Issue.findById(req.params.id).populate('createdBy', 'name email');
     if (!doc) return res.status(404).json({ message: 'Issue not found' });
-    res.json(shapeIssue(doc, req.user?.id));
+    res.json(shapeIssue(doc, req.user?.id, req));
   } catch {
     res.status(400).json({ message: 'Invalid issue id' });
   }
@@ -127,7 +127,7 @@ if (!title || !description || !location) {
 
     const populated = await Issue.findById(issue._id).populate('createdBy', 'name email');
     res.status(201).json({
-      ...shapeIssue(populated, req.user.id),
+      ...shapeIssue(populated, req.user.id, req),
       duplicateWarning:
         possibleDuplicateOf != null
           ? { message: 'Similar open issue may already exist', similarIssueId: possibleDuplicateOf }
@@ -168,7 +168,7 @@ console.log("PRIORITY:", issue.predictedPriority);
     
     // Populate and return updated issue
     const populated = await Issue.findById(issue._id).populate('createdBy', 'name email');
-    const response = shapeIssue(populated, uid);
+    const response = shapeIssue(populated, uid, req);
     
     res.json({
       ...response,

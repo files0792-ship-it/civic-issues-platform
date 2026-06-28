@@ -73,7 +73,7 @@ setIssues(updated);
   async function handleUpvote(issue) {
     
     if (!token) {
-      setError('Log in to upvote.');
+      alert('Please log in to upvote issues.');
       return;
     }
     

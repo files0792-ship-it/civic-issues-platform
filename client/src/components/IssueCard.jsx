@@ -12,11 +12,10 @@ export default function IssueCard({
   upvoting = false,
 
 }) {
-  console.log(issue.imageUrl)
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md">
       {issue.imageUrl && (
-  <div className="aspect-video w-full overflow-hidden bg-slate-100">
+  <div className="aspect-[16/9] sm:aspect-[16/8] lg:aspect-[16/7] w-full overflow-hidden bg-slate-100">
     <img
       src={issue.imageUrl}
       alt=""
