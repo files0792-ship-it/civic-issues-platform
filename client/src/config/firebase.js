@@ -32,6 +32,17 @@ export function isFirebaseConfigured() {
   );
 }
 
+/** Returns names of missing env vars (never exposes secret values). */
+export function getMissingFirebaseEnvVars() {
+  const required = [
+    'VITE_FIREBASE_API_KEY',
+    'VITE_FIREBASE_AUTH_DOMAIN',
+    'VITE_FIREBASE_PROJECT_ID',
+    'VITE_FIREBASE_APP_ID',
+  ];
+  return required.filter((key) => !import.meta.env[key]);
+}
+
 let app;
 let auth;
 

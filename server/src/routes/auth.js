@@ -18,24 +18,33 @@ function formatUserResponse(user) {
 /** POST /api/auth/register — create user (default role: user) */
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, governmentAuthId } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'name, email, and password are required' });
     }
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
+
+    const selectedRole = role || 'user';
+    if (selectedRole === 'admin' && !String(governmentAuthId || '').trim()) {
+      return res.status(400).json({ message: 'Government Auth ID is required for admin registration.' });
+    }
+
     const exists = await User.findOne({ email: email.toLowerCase() });
     if (exists) {
       return res.status(409).json({ message: 'Email already registered' });
     }
+
     const user = await User.create({
       name,
       email,
       password,
-      role: role || 'user',
+      role: selectedRole,
       authProvider: 'local',
+      governmentAuthId: selectedRole === 'admin' ? String(governmentAuthId).trim() : null,
     });
+
     const token = signToken(user);
     return res.status(201).json({
       token,
@@ -50,14 +59,32 @@ router.post('/register', async (req, res) => {
 /** POST /api/auth/login */
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role: loginRole, governmentAuthId } = req.body;
     if (!email || !password) {
       return res.status(400).json({ message: 'email and password are required' });
     }
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+
+    if (loginRole === 'admin' && !String(governmentAuthId || '').trim()) {
+      return res.status(400).json({ message: 'Government Auth ID is required for admin login.' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() }).select(
+      '+password +governmentAuthId'
+    );
+
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+
+    if (loginRole === 'admin') {
+      if (user.role !== 'admin') {
+        return res.status(401).json({ message: 'Invalid email or password' });
+      }
+      if (!(await user.compareGovernmentAuthId(String(governmentAuthId).trim()))) {
+        return res.status(401).json({ message: 'Invalid Government Auth ID.' });
+      }
+    }
+
     const token = signToken(user);
     return res.json({
       token,

@@ -33,10 +33,6 @@ export default function GoogleSignInButton({ redirectTo = '/', onError }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  if (!isFirebaseConfigured()) {
-    return null;
-  }
-
   async function handleGoogleSignIn() {
     if (loading) return;
 
@@ -44,6 +40,13 @@ export default function GoogleSignInButton({ redirectTo = '/', onError }) {
     onError?.('');
 
     try {
+      if (!isFirebaseConfigured()) {
+        onError?.(
+          'Google Sign-In is not configured. Add VITE_FIREBASE_* environment variables and redeploy.'
+        );
+        return;
+      }
+
       const idToken = await getGoogleIdToken();
       const { data } = await api.post('/api/auth/google', { idToken });
 
@@ -98,5 +101,14 @@ export function AuthDivider() {
         <span className="bg-white px-3 text-slate-500">OR</span>
       </div>
     </div>
+  );
+}
+
+export function GoogleAuthSection({ redirectTo = '/', onError }) {
+  return (
+    <>
+      <AuthDivider />
+      <GoogleSignInButton redirectTo={redirectTo} onError={onError} />
+    </>
   );
 }

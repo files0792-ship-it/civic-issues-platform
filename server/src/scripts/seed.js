@@ -25,6 +25,7 @@ async function run() {
     email: 'admin@civic.local',
     password: 'admin123',
     role: 'admin',
+    governmentAuthId: 'GOV-ADMIN-2024',
   });
   const user = await User.create({
     name: 'Jane Citizen',
@@ -76,7 +77,7 @@ async function run() {
   }
 
   console.log('Done.');
-  console.log('Admin: admin@civic.local / admin123');
+  console.log('Admin: admin@civic.local / admin123 / GOV-ADMIN-2024');
   console.log('User:  user@civic.local / user123');
   await mongoose.disconnect();
 }

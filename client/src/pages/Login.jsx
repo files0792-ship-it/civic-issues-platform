@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext.jsx';
-import GoogleSignInButton, { AuthDivider } from '../components/GoogleSignInButton.jsx';
+import { GoogleAuthSection } from '../components/GoogleSignInButton.jsx';
 
 export default function Login() {
   const { setToken } = useAuth();
@@ -13,15 +13,27 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('user');
+  const [governmentAuthId, setGovernmentAuthId] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+
+    if (role === 'admin' && !governmentAuthId.trim()) {
+      setError('Government Auth ID is required for admin login.');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const { data } = await api.post('/api/auth/login', { email, password });
+      const payload = { email, password, role };
+      if (role === 'admin') {
+        payload.governmentAuthId = governmentAuthId.trim();
+      }
+
+      const { data } = await api.post('/api/auth/login', payload);
       setToken(data.token);
       localStorage.setItem('role', data.user.role);
 
@@ -51,6 +63,24 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <label htmlFor="role" className="block text-sm font-medium text-slate-700">
+              Login as
+            </label>
+            <select
+              id="role"
+              value={role}
+              onChange={(e) => {
+                setRole(e.target.value);
+                if (e.target.value !== 'admin') setGovernmentAuthId('');
+              }}
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <div>
             <label htmlFor="email" className="block text-sm font-medium text-slate-700">
               Email
             </label>
@@ -64,6 +94,7 @@ export default function Login() {
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
             />
           </div>
+
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-slate-700">
               Password
@@ -78,20 +109,27 @@ export default function Login() {
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
             />
           </div>
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-slate-700">
-              Login as
-            </label>
-            <select
-              id="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
+
+          {role === 'admin' && (
+            <div>
+              <label htmlFor="governmentAuthId" className="block text-sm font-medium text-slate-700">
+                Government Auth ID
+              </label>
+              <input
+                id="governmentAuthId"
+                type="text"
+                required
+                value={governmentAuthId}
+                onChange={(e) => setGovernmentAuthId(e.target.value)}
+                placeholder="Enter Government Authentication ID"
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
+              />
+              <p className="mt-1.5 text-xs text-slate-500">
+                This ID is required for administrator authentication.
+              </p>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={submitting}
@@ -101,8 +139,7 @@ export default function Login() {
           </button>
         </form>
 
-        <AuthDivider />
-        <GoogleSignInButton redirectTo={from} onError={setError} />
+        <GoogleAuthSection redirectTo={from} onError={setError} />
       </div>
 
       <p className="mt-6 text-center text-sm text-slate-600">

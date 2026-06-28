@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext.jsx';
-import GoogleSignInButton, { AuthDivider } from '../components/GoogleSignInButton.jsx';
+import { GoogleAuthSection } from '../components/GoogleSignInButton.jsx';
 
 export default function Register() {
   const { setToken } = useAuth();
@@ -11,15 +11,27 @@ export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [governmentAuthId, setGovernmentAuthId] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+
+    if (role === 'admin' && !governmentAuthId.trim()) {
+      setError('Government Auth ID is required for admin registration.');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const { data } = await api.post('/api/auth/register', { name, email, password, role });
+      const payload = { name, email, password, role };
+      if (role === 'admin') {
+        payload.governmentAuthId = governmentAuthId.trim();
+      }
+
+      const { data } = await api.post('/api/auth/register', payload);
       setToken(data.token);
       localStorage.setItem('role', data.user.role);
       navigate('/');
@@ -55,6 +67,7 @@ export default function Register() {
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
             />
           </div>
+
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-slate-700">
               Email
@@ -69,6 +82,7 @@ export default function Register() {
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
             />
           </div>
+
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-slate-700">
               Password (min 6)
@@ -84,17 +98,42 @@ export default function Register() {
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
             />
           </div>
+
+          {role === 'admin' && (
+            <div>
+              <label htmlFor="governmentAuthId" className="block text-sm font-medium text-slate-700">
+                Government Auth ID
+              </label>
+              <input
+                id="governmentAuthId"
+                type="text"
+                required
+                value={governmentAuthId}
+                onChange={(e) => setGovernmentAuthId(e.target.value)}
+                placeholder="Enter Government Authentication ID"
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
+              />
+              <p className="mt-1.5 text-xs text-slate-500">
+                This ID is required for administrator authentication.
+              </p>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-slate-700">Register as</label>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value)}
+              onChange={(e) => {
+                setRole(e.target.value);
+                if (e.target.value !== 'admin') setGovernmentAuthId('');
+              }}
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5"
             >
               <option value="user">User</option>
               <option value="admin">Admin</option>
             </select>
           </div>
+
           <button
             type="submit"
             disabled={submitting}
@@ -104,8 +143,7 @@ export default function Register() {
           </button>
         </form>
 
-        <AuthDivider />
-        <GoogleSignInButton redirectTo="/" onError={setError} />
+        <GoogleAuthSection redirectTo="/" onError={setError} />
       </div>
 
       <p className="mt-6 text-center text-sm text-slate-600">
