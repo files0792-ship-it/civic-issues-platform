@@ -29,7 +29,7 @@ function GoogleLogo() {
 }
 
 export default function GoogleSignInButton({ redirectTo = '/', onError }) {
-  const { setToken } = useAuth();
+  const { setToken, setUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -51,7 +51,7 @@ export default function GoogleSignInButton({ redirectTo = '/', onError }) {
       const { data } = await api.post('/api/auth/google', { idToken });
 
       setToken(data.token);
-      localStorage.setItem('role', data.user.role);
+      setUser(data.user);
 
       if (data.user.role === 'admin') {
         navigate('/admin', { replace: true });

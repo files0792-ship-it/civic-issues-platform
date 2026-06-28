@@ -3,9 +3,10 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext.jsx';
 import { GoogleAuthSection } from '../components/GoogleSignInButton.jsx';
+import AdminGovIdField from '../components/AdminGovIdField.jsx';
 
 export default function Login() {
-  const { setToken } = useAuth();
+  const { setToken, setUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
@@ -35,7 +36,7 @@ export default function Login() {
 
       const { data } = await api.post('/api/auth/login', payload);
       setToken(data.token);
-      localStorage.setItem('role', data.user.role);
+      setUser(data.user);
 
       if (data.user.role === 'admin') {
         navigate('/admin', { replace: true });
@@ -111,23 +112,11 @@ export default function Login() {
           </div>
 
           {role === 'admin' && (
-            <div>
-              <label htmlFor="governmentAuthId" className="block text-sm font-medium text-slate-700">
-                Government Auth ID
-              </label>
-              <input
-                id="governmentAuthId"
-                type="text"
-                required
-                value={governmentAuthId}
-                onChange={(e) => setGovernmentAuthId(e.target.value)}
-                placeholder="Enter Government Authentication ID"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
-              />
-              <p className="mt-1.5 text-xs text-slate-500">
-                This ID is required for administrator authentication.
-              </p>
-            </div>
+            <AdminGovIdField
+              id="login-governmentAuthId"
+              value={governmentAuthId}
+              onChange={(e) => setGovernmentAuthId(e.target.value)}
+            />
           )}
 
           <button

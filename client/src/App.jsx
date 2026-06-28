@@ -15,16 +15,10 @@ function PrivateRoute({ children }) {
 }
 
 function AdminRoute({ children }) {
-  const { token, loading } = useAuth();
+  const { token, user, loading, isAdmin } = useAuth();
   if (loading) return <p className="p-8 text-center text-slate-500">Loading…</p>;
   if (!token) return <Navigate to="/login" replace state={{ from: { pathname: '/admin' } }} />;
-  
-  // Check localStorage for role
-  const role = localStorage.getItem('role');
-  if (role !== 'admin') {
-    return <Navigate to="/" replace />;
-  }
-  
+  if (!user || !isAdmin) return <Navigate to="/" replace />;
   return children;
 }
 

@@ -20,38 +20,24 @@ const userSchema = new mongoose.Schema(
       default: 'local',
     },
     profilePicture: { type: String, default: null },
-    /** Hashed; required for admin accounts using email/password login */
-    governmentAuthId: { type: String, default: null, select: false },
+    /** Permanent Government Auth ID assigned to admin accounts */
+    governmentAuthId: { type: String, default: null, trim: true },
     /** 'user' | 'admin' — admins can manage all issues */
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
   },
   { timestamps: true }
 );
 
-userSchema.pre('save', async function hashSecrets(next) {
-  try {
-    if (this.isModified('password') && this.password) {
-      const salt = await bcrypt.genSalt(10);
-      this.password = await bcrypt.hash(this.password, salt);
-    }
-    if (this.isModified('governmentAuthId') && this.governmentAuthId) {
-      const salt = await bcrypt.genSalt(10);
-      this.governmentAuthId = await bcrypt.hash(this.governmentAuthId, salt);
-    }
-    next();
-  } catch (err) {
-    next(err);
-  }
+userSchema.pre('save', async function hashPassword(next) {
+  if (!this.isModified('password') || !this.password) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
 userSchema.methods.comparePassword = function comparePassword(candidate) {
   if (!this.password) return false;
   return bcrypt.compare(candidate, this.password);
-};
-
-userSchema.methods.compareGovernmentAuthId = function compareGovernmentAuthId(candidate) {
-  if (!this.governmentAuthId) return false;
-  return bcrypt.compare(candidate, this.governmentAuthId);
 };
 
 export const User = mongoose.model('User', userSchema);

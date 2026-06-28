@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext.jsx';
 import { GoogleAuthSection } from '../components/GoogleSignInButton.jsx';
+import AdminGovIdField from '../components/AdminGovIdField.jsx';
 
 export default function Register() {
-  const { setToken } = useAuth();
+  const { setToken, setUser } = useAuth();
   const [role, setRole] = useState('user');
   const navigate = useNavigate();
   const [name, setName] = useState('');
@@ -33,8 +34,8 @@ export default function Register() {
 
       const { data } = await api.post('/api/auth/register', payload);
       setToken(data.token);
-      localStorage.setItem('role', data.user.role);
-      navigate('/');
+      setUser(data.user);
+      navigate(data.user.role === 'admin' ? '/admin' : '/');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -100,23 +101,11 @@ export default function Register() {
           </div>
 
           {role === 'admin' && (
-            <div>
-              <label htmlFor="governmentAuthId" className="block text-sm font-medium text-slate-700">
-                Government Auth ID
-              </label>
-              <input
-                id="governmentAuthId"
-                type="text"
-                required
-                value={governmentAuthId}
-                onChange={(e) => setGovernmentAuthId(e.target.value)}
-                placeholder="Enter Government Authentication ID"
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
-              />
-              <p className="mt-1.5 text-xs text-slate-500">
-                This ID is required for administrator authentication.
-              </p>
-            </div>
+            <AdminGovIdField
+              id="register-governmentAuthId"
+              value={governmentAuthId}
+              onChange={(e) => setGovernmentAuthId(e.target.value)}
+            />
           )}
 
           <div>

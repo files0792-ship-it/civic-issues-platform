@@ -49,7 +49,7 @@ async function getCoordinates(query) {
 }
 
 export default function Home() {
-  const { user, token } = useAuth();
+  const { user, token, isAdmin } = useAuth();
   const [view, setView] = useState('list');
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -295,7 +295,7 @@ export default function Home() {
                 issue={issue}
                 onUpvote={handleUpvote}
                 compact={view === 'compact'}
-                canChangeStatus={localStorage.getItem('role') === 'admin'}
+                canChangeStatus={isAdmin}
                 onStatusChange={handleStatusChange}
                 statusUpdating={statusUpdatingId === issue.id}
                 upvoting={upvotingId === issue.id}

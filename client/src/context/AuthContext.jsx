@@ -43,7 +43,13 @@ export function AuthProvider({ children }) {
     setTokenState(t);
   };
 
-  const logout = () => setToken(null);
+  const logout = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('role');
+    setAuthToken(null);
+    setTokenState(null);
+    setUser(null);
+  };
 
   const value = useMemo(
     () => ({

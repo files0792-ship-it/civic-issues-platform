@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { User } from '../models/User.js';
+import { GovernmentAuthId } from '../models/GovernmentAuthId.js';
 import { signToken } from '../utils/token.js';
 import { authenticate } from '../middleware/auth.js';
 import { isFirebaseAdminConfigured, verifyFirebaseIdToken } from '../config/firebaseAdmin.js';
@@ -13,6 +14,16 @@ function formatUserResponse(user) {
     email: user.email,
     role: user.role,
   };
+}
+
+async function validateGovernmentAuthId(governmentAuthId) {
+  const trimmed = String(governmentAuthId || '').trim();
+  if (!trimmed) return { ok: false, id: null };
+
+  const record = await GovernmentAuthId.findOne({ governmentAuthId: trimmed });
+  if (!record) return { ok: false, id: null };
+
+  return { ok: true, id: trimmed };
 }
 
 /** POST /api/auth/register — create user (default role: user) */
@@ -31,6 +42,23 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Government Auth ID is required for admin registration.' });
     }
 
+    let storedGovId = null;
+    if (selectedRole === 'admin') {
+      const validation = await validateGovernmentAuthId(governmentAuthId);
+      if (!validation.ok) {
+        return res.status(400).json({ message: 'Invalid Government Authentication ID.' });
+      }
+
+      const alreadyAssigned = await User.findOne({ governmentAuthId: validation.id });
+      if (alreadyAssigned) {
+        return res.status(409).json({
+          message: 'This Government Authentication ID is already assigned to an account.',
+        });
+      }
+
+      storedGovId = validation.id;
+    }
+
     const exists = await User.findOne({ email: email.toLowerCase() });
     if (exists) {
       return res.status(409).json({ message: 'Email already registered' });
@@ -42,7 +70,7 @@ router.post('/register', async (req, res) => {
       password,
       role: selectedRole,
       authProvider: 'local',
-      governmentAuthId: selectedRole === 'admin' ? String(governmentAuthId).trim() : null,
+      governmentAuthId: storedGovId,
     });
 
     const token = signToken(user);
@@ -68,9 +96,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Government Auth ID is required for admin login.' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select(
-      '+password +governmentAuthId'
-    );
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
@@ -80,7 +106,9 @@ router.post('/login', async (req, res) => {
       if (user.role !== 'admin') {
         return res.status(401).json({ message: 'Invalid email or password' });
       }
-      if (!(await user.compareGovernmentAuthId(String(governmentAuthId).trim()))) {
+
+      const submittedGovId = String(governmentAuthId).trim();
+      if (!user.governmentAuthId || user.governmentAuthId !== submittedGovId) {
         return res.status(401).json({ message: 'Invalid Government Auth ID.' });
       }
     }
