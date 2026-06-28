@@ -7,6 +7,7 @@ import MapView from '../components/MapView.jsx';
 import {
   getIndianStates,
   getIndianCities,
+  getAllIndianCities,
   getIndianStateName,
   getGeocodeQuery,
 } from '../utils/indianLocations.js';
@@ -67,7 +68,7 @@ export default function Home() {
   );
 
   const cityOptions = useMemo(() => {
-    const cities = getIndianCities(stateCode);
+    const cities = stateCode ? getIndianCities(stateCode) : getAllIndianCities();
     return [{ value: '', label: 'All Cities' }, ...cities];
   }, [stateCode]);
 
@@ -220,11 +221,10 @@ export default function Home() {
           />
           <SearchableDropdown
             label="City"
-            disabled={!stateCode}
             options={cityOptions}
             value={city}
             onChange={setCity}
-            placeholder={stateCode ? 'All Cities' : 'Select State First'}
+            placeholder="All Cities"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">

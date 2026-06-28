@@ -6,6 +6,7 @@ import { uploadImage } from '../middleware/upload.js';
 import { jaccardSimilarity, combinedIssueText } from '../utils/textSimilarity.js';
 import { calculateDynamicPriority } from '../utils/priorityStub.js';
 import { shapeIssue } from '../utils/issueShape.js';
+import { applyLocationFilters } from '../utils/locationFilter.js';
 
 const router = Router();
 
@@ -20,19 +21,11 @@ router.get('/', optionalAuth, async (req, res) => {
     if (q && String(q).trim()) {
       filter.$text = { $search: String(q).trim() };
     }
-    if (stateQuery && String(stateQuery).trim()) {
-      filter.state = new RegExp(`^${String(stateQuery).trim()}$`, 'i');
-    }
-    if (cityQuery && String(cityQuery).trim()) {
-      filter.city = new RegExp(`^${String(cityQuery).trim()}$`, 'i');
-    }
-    if (locationQuery && String(locationQuery).trim()) {
-      const queryStr = String(locationQuery).trim();
-      filter.$or = [
-        { city: new RegExp(`^${queryStr}$`, 'i') },
-        { location: new RegExp(`^${queryStr}$`, 'i') }
-      ];
-    }
+    applyLocationFilters(filter, {
+      state: stateQuery,
+      city: cityQuery,
+      location: locationQuery,
+    });
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));

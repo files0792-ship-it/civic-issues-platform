@@ -15,6 +15,27 @@ export function getIndianCities(stateCode) {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
+let allIndianCitiesCache = null;
+
+export function getAllIndianCities() {
+  if (allIndianCitiesCache) return allIndianCitiesCache;
+
+  const seen = new Set();
+  const cities = [];
+
+  for (const state of getIndianStates()) {
+    for (const city of getIndianCities(state.value)) {
+      if (!seen.has(city.value)) {
+        seen.add(city.value);
+        cities.push(city);
+      }
+    }
+  }
+
+  allIndianCitiesCache = cities.sort((a, b) => a.label.localeCompare(b.label));
+  return allIndianCitiesCache;
+}
+
 export function getIndianStateName(stateCode) {
   return State.getStateByCodeAndCountry(stateCode, COUNTRY_CODE)?.name || '';
 }

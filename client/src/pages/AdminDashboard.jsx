@@ -6,6 +6,7 @@ import { ISSUE_STATUSES } from '../constants/issueStatus.js';
 import {
   getIndianStates,
   getIndianCities,
+  getAllIndianCities,
   getIndianStateName,
 } from '../utils/indianLocations.js';
 
@@ -28,7 +29,7 @@ export default function AdminDashboard() {
   );
 
   const cityOptions = useMemo(() => {
-    const cities = getIndianCities(stateCode);
+    const cities = stateCode ? getIndianCities(stateCode) : getAllIndianCities();
     return [{ value: '', label: 'All Cities' }, ...cities];
   }, [stateCode]);
 
@@ -143,11 +144,10 @@ export default function AdminDashboard() {
             />
             <SearchableDropdown
               label="City"
-              disabled={!stateCode}
               options={cityOptions}
               value={city}
               onChange={setCity}
-              placeholder={stateCode ? 'All Cities' : 'Select State First'}
+              placeholder="All Cities"
             />
           </div>
           <div className="flex items-end gap-3">

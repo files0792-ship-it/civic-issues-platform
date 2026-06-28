@@ -4,6 +4,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { Issue } from '../models/Issue.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { applyLocationFilters } from '../utils/locationFilter.js';
 
 const router = Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -37,19 +38,11 @@ router.get('/issues', async (req, res) => {
       if (priorityMax != null) filter.predictedPriority.$lte = Number(priorityMax);
     }
 
-    if (stateQuery && String(stateQuery).trim()) {
-      filter.state = new RegExp(`^${String(stateQuery).trim()}$`, 'i');
-    }
-    if (cityQuery && String(cityQuery).trim()) {
-      filter.city = new RegExp(`^${String(cityQuery).trim()}$`, 'i');
-    }
-    if (locationQuery != null && String(locationQuery).trim()) {
-      const queryStr = String(locationQuery).trim();
-      filter.$or = [
-        { city: new RegExp(`^${queryStr}$`, 'i') },
-        { location: new RegExp(`^${queryStr}$`, 'i') }
-      ];
-    }
+    applyLocationFilters(filter, {
+      state: stateQuery,
+      city: cityQuery,
+      location: locationQuery,
+    });
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
