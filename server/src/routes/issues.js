@@ -6,7 +6,7 @@ import { uploadImage } from '../middleware/upload.js';
 import { jaccardSimilarity, combinedIssueText } from '../utils/textSimilarity.js';
 import { calculateDynamicPriority } from '../utils/priorityStub.js';
 import { shapeIssue } from '../utils/issueShape.js';
-import { applyLocationFilters } from '../utils/locationFilter.js';
+import { buildIssueFilter } from '../utils/issueQuery.js';
 
 const router = Router();
 
@@ -15,13 +15,9 @@ router.get('/', optionalAuth, async (req, res) => {
   try {
     const { status, sort = 'newest', location: locationQuery, state: stateQuery, city: cityQuery, q, page = '1', limit = '20' } = req.query;
 
-    const filter = {};
-    if (status) filter.status = status;
-
-    if (q && String(q).trim()) {
-      filter.$text = { $search: String(q).trim() };
-    }
-    applyLocationFilters(filter, {
+    const filter = buildIssueFilter({
+      status,
+      q,
       state: stateQuery,
       city: cityQuery,
       location: locationQuery,
@@ -174,8 +170,6 @@ router.post('/:id/upvote', authenticate, async (req, res) => {
 
     // Recalculate priority based on new upvote count
     issue.predictedPriority = calculateDynamicPriority(issue.upvotes.length);
-    console.log("UPVOTES:", issue.upvotes.length);
-console.log("PRIORITY:", issue.predictedPriority);
 
     await issue.save();
     

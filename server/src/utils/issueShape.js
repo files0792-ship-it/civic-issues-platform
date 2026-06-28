@@ -1,21 +1,40 @@
 /**
- * Shared JSON shape for issues in API responses (feed, detail, admin status update).
+ * Normalize stored image paths for consistent URL generation.
+ * Handles legacy formats: bare filenames, uploads/ prefix, issues/ subfolder.
  */
-export function publicImageUrl(relativePath, req = null) {
+export function normalizeImagePath(relativePath) {
   if (!relativePath) return null;
-  // Use PUBLIC_API_URL if set, otherwise use request origin, fallback to relative path
+
+  let p = String(relativePath).replace(/\\/g, '/').trim();
+  p = p.replace(/^\/+/, '');
+
+  while (p.startsWith('uploads/')) {
+    p = p.slice('uploads/'.length);
+  }
+
+  // Multer saves under uploads/issues/; older records may store only the filename.
+  if (p && !p.includes('/')) {
+    p = `issues/${p}`;
+  }
+
+  return p;
+}
+
+export function publicImageUrl(relativePath, req = null) {
+  const normalized = normalizeImagePath(relativePath);
+  if (!normalized) return null;
+
   const base = (process.env.PUBLIC_API_URL || '').replace(/\/$/, '');
   if (base) {
-    return `${base}/uploads/${relativePath.replace(/^\//, '')}`;
+    return `${base}/uploads/${normalized}`;
   }
-  // If request is available, use its origin for absolute URL
-  if (req && req.headers && req.headers.host) {
+
+  if (req?.headers?.host) {
     const protocol = req.protocol || 'http';
-    const host = req.headers.host;
-    return `${protocol}://${host}/uploads/${relativePath.replace(/^\//, '')}`;
+    return `${protocol}://${req.headers.host}/uploads/${normalized}`;
   }
-  // Fallback to relative path (for development with proxy)
-  return `/uploads/${relativePath.replace(/^\//, '')}`;
+
+  return `/uploads/${normalized}`;
 }
 
 export function shapeIssue(doc, userId = null, req = null) {
@@ -23,7 +42,7 @@ export function shapeIssue(doc, userId = null, req = null) {
   const upvoteIds = (o.upvotes || []).map((id) => id.toString());
   const upvoteCount = upvoteIds.length;
   const hasUpvoted = userId ? upvoteIds.includes(userId.toString()) : false;
-  
+
   let displayLocation = o.location ?? null;
   if (o.city && o.state) {
     displayLocation = `${o.city}, ${o.state}`;

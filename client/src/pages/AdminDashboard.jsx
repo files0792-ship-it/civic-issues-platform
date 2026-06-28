@@ -40,8 +40,11 @@ export default function AdminDashboard() {
       const params = { sort };
       if (status) params.status = status;
       if (q.trim()) params.q = q.trim();
-      if (stateCode) params.state = getIndianStateName(stateCode);
-      if (city) params.city = city;
+      if (stateCode) {
+        const stateName = getIndianStateName(stateCode).trim();
+        if (stateName) params.state = stateName;
+      }
+      if (city.trim()) params.city = city.trim();
       if (pMin !== '') params.priorityMin = pMin;
       if (pMax !== '') params.priorityMax = pMax;
       const { data } = await api.get('/api/admin/issues', { params });

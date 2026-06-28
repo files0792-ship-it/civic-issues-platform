@@ -4,7 +4,8 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { Issue } from '../models/Issue.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
-import { applyLocationFilters } from '../utils/locationFilter.js';
+import { buildIssueFilter } from '../utils/issueQuery.js';
+import { shapeIssue } from '../utils/issueShape.js';
 
 const router = Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -28,21 +29,19 @@ router.get('/issues', async (req, res) => {
       limit = '50',
     } = req.query;
 
-    const filter = {};
-    if (status) filter.status = status;
-    if (q && String(q).trim()) filter.$text = { $search: String(q).trim() };
+    const filter = buildIssueFilter({
+      status,
+      q,
+      state: stateQuery,
+      city: cityQuery,
+      location: locationQuery,
+    });
 
     if (priorityMin != null || priorityMax != null) {
       filter.predictedPriority = {};
       if (priorityMin != null) filter.predictedPriority.$gte = Number(priorityMin);
       if (priorityMax != null) filter.predictedPriority.$lte = Number(priorityMax);
     }
-
-    applyLocationFilters(filter, {
-      state: stateQuery,
-      city: cityQuery,
-      location: locationQuery,
-    });
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
@@ -58,33 +57,7 @@ router.get('/issues', async (req, res) => {
       Issue.countDocuments(filter),
     ]);
 
-    const base = (process.env.PUBLIC_API_URL || '').replace(/\/$/, '');
-    const shaped = items.map((doc) => {
-      const o = doc.toObject();
-      const upvoteCount = (o.upvotes || []).length;
-      
-      let displayLocation = o.location ?? null;
-      if (o.city && o.state) {
-        displayLocation = `${o.city}, ${o.state}`;
-      }
-
-      return {
-        id: o._id,
-        title: o.title,
-        description: o.description,
-        imageUrl: o.image ? `${base}/uploads/${o.image.replace(/^\//, '')}` : null,
-        location: displayLocation,
-        state: o.state ?? null,
-        city: o.city ?? null,
-        status: o.status,
-        upvoteCount,
-        predictedPriority: o.predictedPriority,
-        possibleDuplicateOf: o.possibleDuplicateOf,
-        createdBy: o.createdBy,
-        createdAt: o.createdAt,
-        updatedAt: o.updatedAt,
-      };
-    });
+    const shaped = items.map((doc) => shapeIssue(doc, null, req));
 
     res.json({ issues: shaped, page: pageNum, limit: limitNum, total });
   } catch (err) {

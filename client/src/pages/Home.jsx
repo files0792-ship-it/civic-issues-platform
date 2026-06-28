@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext.jsx';
 import IssueCard from '../components/IssueCard.jsx';
@@ -61,6 +61,7 @@ export default function Home() {
   const [city, setCity] = useState('');
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
   const [upvotingId, setUpvotingId] = useState(null);
+  const fetchSeq = useRef(0);
 
   const stateOptions = useMemo(
     () => [{ value: '', label: 'All States' }, ...getIndianStates()],
@@ -73,15 +74,22 @@ export default function Home() {
   }, [stateCode]);
 
   const fetchIssues = useCallback(async () => {
+    const seq = ++fetchSeq.current;
     setLoading(true);
     setError('');
     try {
       const params = { sort };
       if (status) params.status = status;
       if (q.trim()) params.q = q.trim();
-      if (stateCode) params.state = getIndianStateName(stateCode);
-      if (city) params.city = city;
+      if (stateCode) {
+        const stateName = getIndianStateName(stateCode).trim();
+        if (stateName) params.state = stateName;
+      }
+      if (city.trim()) params.city = city.trim();
+
       const { data } = await api.get('/api/issues', { params });
+      if (seq !== fetchSeq.current) return;
+
       const issuesData = data.issues || [];
 
       const updatedIssues = await Promise.all(
@@ -93,9 +101,10 @@ export default function Home() {
 
       setIssues(updatedIssues);
     } catch (err) {
+      if (seq !== fetchSeq.current) return;
       setError(err.response?.data?.message || 'Could not load issues. Is the API running?');
     } finally {
-      setLoading(false);
+      if (seq === fetchSeq.current) setLoading(false);
     }
   }, [sort, status, q, stateCode, city]);
 
