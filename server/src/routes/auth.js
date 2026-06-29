@@ -13,6 +13,8 @@ function formatUserResponse(user) {
     name: user.name,
     email: user.email,
     role: user.role,
+    authProvider: user.authProvider || 'local',
+    profilePicture: user.profilePicture || null,
   };
 }
 
@@ -203,10 +205,104 @@ router.get('/me', authenticate, async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      authProvider: user.authProvider || 'local',
+      profilePicture: user.profilePicture || null,
     });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Failed to load profile' });
+  }
+});
+
+/** PUT /api/users/change-password — change password for local/linked accounts */
+router.put('/change-password', authenticate, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'currentPassword and newPassword are required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.authProvider === 'google') {
+      return res.status(400).json({ message: 'Google accounts cannot set a password here. Link your account first.' });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({ message: 'No password set on this account.' });
+    }
+
+    const valid = await user.comparePassword(currentPassword);
+    if (!valid) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Failed to update password' });
+  }
+});
+
+/** POST /api/auth/google/link — link a Google account to an existing local account */
+router.post('/google/link', authenticate, async (req, res) => {
+  try {
+    if (!isFirebaseAdminConfigured()) {
+      return res.status(503).json({ message: 'Google Sign-In is not configured on the server.' });
+    }
+
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ message: 'idToken is required' });
+    }
+
+    let decoded;
+    try {
+      decoded = await verifyFirebaseIdToken(idToken);
+    } catch {
+      return res.status(401).json({ message: 'Invalid or expired Google token.' });
+    }
+
+    const googleId = decoded.uid;
+    const googleEmail = decoded.email?.toLowerCase()?.trim();
+    const profilePicture = decoded.picture || null;
+
+    // Check if this googleId is already linked to a DIFFERENT account
+    const existingWithGoogle = await User.findOne({ googleId });
+    if (existingWithGoogle && existingWithGoogle._id.toString() !== req.user.id) {
+      return res.status(409).json({ message: 'This Google account is already linked to a different user.' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.googleId) {
+      return res.status(409).json({ message: 'A Google account is already linked to this profile.' });
+    }
+
+    user.googleId = googleId;
+    user.authProvider = 'linked';
+    if (profilePicture && !user.profilePicture) user.profilePicture = profilePicture;
+    await user.save();
+
+    return res.json({
+      message: 'Google account linked successfully',
+      user: formatUserResponse(user),
+    });
+  } catch (err) {
+    console.error(err);
+    if (err.code === 11000) {
+      return res.status(409).json({ message: 'This Google account is already linked to another user.' });
+    }
+    return res.status(500).json({ message: 'Failed to link Google account' });
   }
 });
 

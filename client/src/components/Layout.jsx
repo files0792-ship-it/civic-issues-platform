@@ -1,7 +1,6 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import ConfirmDialog from './ConfirmDialog.jsx';
+import AccountMenu from './AccountMenu.jsx';
 
 const navCls = ({ isActive }) =>
   `rounded-lg px-3 py-2 text-sm font-medium transition ${
@@ -9,9 +8,7 @@ const navCls = ({ isActive }) =>
   }`;
 
 export default function Layout({ children }) {
-  const { user, isAdmin, logout } = useAuth();
-  const navigate = useNavigate();
-  const [logoutOpen, setLogoutOpen] = useState(false);
+  const { user, isAdmin } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -51,13 +48,7 @@ export default function Layout({ children }) {
                 </NavLink>
               </>
             ) : (
-              <button
-                type="button"
-                onClick={() => setLogoutOpen(true)}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-              >
-                Log out
-              </button>
+              <AccountMenu />
             )}
           </nav>
         </div>
@@ -68,20 +59,6 @@ export default function Layout({ children }) {
       <footer className="border-t border-slate-200 bg-white py-6 text-center text-sm text-slate-500">
         Hackathon-ready civic reporting by city
       </footer>
-
-      <ConfirmDialog
-        open={logoutOpen}
-        title="Log out"
-        message="Are you sure you want to log out?"
-        confirmLabel="Logout"
-        cancelLabel="Cancel"
-        onCancel={() => setLogoutOpen(false)}
-        onConfirm={() => {
-          logout();
-          navigate('/');
-          setLogoutOpen(false);
-        }}
-      />
     </div>
   );
 }

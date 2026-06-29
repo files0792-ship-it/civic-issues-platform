@@ -5,6 +5,7 @@ import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import SubmitIssue from './pages/SubmitIssue.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
+import Profile from './pages/Profile.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
 function PrivateRoute({ children }) {
@@ -43,6 +44,14 @@ export default function App() {
             <AdminRoute>
               <AdminDashboard />
             </AdminRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute>
+              <Profile />
+            </PrivateRoute>
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
