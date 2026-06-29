@@ -7,6 +7,8 @@ import SubmitIssue from './pages/SubmitIssue.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import Profile from './pages/Profile.jsx';
 import { useAuth } from './context/AuthContext.jsx';
+import { ThemeProvider } from './contexts/ThemeContext.jsx';
+import { Toaster } from 'react-hot-toast';
 
 function PrivateRoute({ children }) {
   const { token, loading } = useAuth();
@@ -25,37 +27,40 @@ function AdminRoute({ children }) {
 
 export default function App() {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/submit"
-          element={
-            <PrivateRoute>
-              <SubmitIssue />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <PrivateRoute>
-              <Profile />
-            </PrivateRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Layout>
+    <ThemeProvider>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/submit"
+            element={
+              <PrivateRoute>
+                <SubmitIssue />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+      <Toaster position="top-right" />
+    </ThemeProvider>
   );
 }

@@ -6,6 +6,7 @@ import ChangePasswordModal from '../components/ChangePasswordModal.jsx';
 import { api } from '../api/client.js';
 import { isFirebaseConfigured } from '../config/firebase.js';
 import { getGoogleAuthErrorMessage, getGoogleIdToken } from '../utils/googleAuth.js';
+import { User, Mail, Lock, LogOut, Shield, CheckCircle, X } from 'lucide-react';
 
 /** Generates initials (up to 2 chars) from a display name */
 function getInitials(name = '') {
@@ -49,11 +50,14 @@ function Avatar({ user, size = 'lg' }) {
   );
 }
 
-function InfoRow({ label, value, masked }) {
+function InfoRow({ label, value, masked, icon: Icon }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 py-3 border-b border-slate-100 last:border-0">
-      <span className="w-36 shrink-0 text-sm font-medium text-slate-500">{label}</span>
-      <span className="text-sm text-slate-900 font-medium tracking-wide">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-4 border-b border-slate-100 dark:border-slate-700 last:border-0">
+      <div className="flex items-center gap-3 w-full sm:w-auto">
+        {Icon && <Icon size={18} className="text-slate-400 dark:text-slate-500 shrink-0" />}
+        <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</span>
+      </div>
+      <span className="text-sm text-slate-900 dark:text-white font-medium tracking-wide">
         {masked ? '••••••••' : value}
       </span>
     </div>
@@ -63,16 +67,15 @@ function InfoRow({ label, value, masked }) {
 function ProviderBadge({ connected }) {
   if (connected) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-        </svg>
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-success-100 dark:bg-success-900/30 px-3 py-1 text-xs font-semibold text-success-700 dark:text-success-300 border border-success-200 dark:border-success-500/30">
+        <CheckCircle size={12} />
         Connected
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 border border-slate-200">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+      <X size={12} />
       Not Connected
     </span>
   );
@@ -144,22 +147,23 @@ export default function Profile() {
       <div className="mx-auto max-w-2xl space-y-6 pb-16">
         {/* Page header */}
         <div>
-          <h1 className="font-display text-3xl font-bold text-slate-900">My Profile</h1>
-          <p className="mt-1 text-slate-500 text-sm">Manage your account settings and preferences.</p>
+          <h1 className="font-display text-3xl font-bold text-slate-900 dark:text-white">My Profile</h1>
+          <p className="mt-1 text-slate-500 dark:text-slate-400 text-sm">Manage your account settings and preferences.</p>
         </div>
 
         {/* Profile header card */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
             <Avatar user={user} size="lg" />
             <div className="text-center sm:text-left">
-              <p className="font-display text-xl font-bold text-slate-900">{user.name}</p>
-              <p className="text-sm text-slate-500 mt-0.5">{user.email}</p>
-              <div className="mt-2 flex flex-wrap justify-center sm:justify-start gap-2">
-                <span className="inline-flex items-center rounded-full bg-civic-50 px-2.5 py-0.5 text-xs font-semibold text-civic-700 border border-civic-100 capitalize">
+              <p className="font-display text-xl font-bold text-slate-900 dark:text-white">{user.name}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{user.email}</p>
+              <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 px-3 py-1 text-xs font-semibold text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-500/30 capitalize">
+                  <Shield size={12} />
                   {user.role}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600 border border-slate-200 capitalize">
+                <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 capitalize">
                   {user.authProvider === 'linked'
                     ? 'Email + Google'
                     : user.authProvider === 'google'
@@ -172,14 +176,14 @@ export default function Profile() {
         </div>
 
         {/* Account Info card */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
-            <h2 className="font-display text-base font-bold text-slate-800">Account Information</h2>
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50">
+            <h2 className="font-display text-base font-bold text-slate-800 dark:text-white">Account Information</h2>
           </div>
           <div className="px-6 py-2">
-            <InfoRow label="Full Name" value={user.name} />
-            <InfoRow label="Email Address" value={user.email} />
-            <InfoRow label="Password" value="••••••••" masked />
+            <InfoRow label="Full Name" value={user.name} icon={User} />
+            <InfoRow label="Email Address" value={user.email} icon={Mail} />
+            <InfoRow label="Password" value="••••••••" masked icon={Lock} />
           </div>
           {/* Change password — only for local/linked accounts */}
           {!isGoogleOnly && (
@@ -188,11 +192,9 @@ export default function Profile() {
                 id="change-password-btn"
                 type="button"
                 onClick={() => setShowPasswordModal(true)}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 transition"
               >
-                <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
+                <Lock size={16} className="text-slate-500 dark:text-slate-400" />
                 Change Password
               </button>
             </div>
@@ -200,18 +202,18 @@ export default function Profile() {
         </div>
 
         {/* Google Account card */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
-            <h2 className="font-display text-base font-bold text-slate-800">Google Account</h2>
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50">
+            <h2 className="font-display text-base font-bold text-slate-800 dark:text-white">Google Account</h2>
           </div>
           <div className="px-6 py-5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-slate-200 shadow-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-sm">
                   <GoogleLogo />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">Google</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">Google</p>
                   <div className="mt-0.5">
                     <ProviderBadge connected={isGoogleConnected} />
                   </div>
@@ -224,11 +226,11 @@ export default function Profile() {
                   type="button"
                   onClick={handleSyncGoogle}
                   disabled={linkingGoogle}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 transition"
+                  className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-60 transition"
                 >
                   {linkingGoogle ? (
                     <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 dark:border-slate-500 border-t-slate-700 dark:border-t-slate-300" />
                       Linking…
                     </>
                   ) : (
@@ -241,7 +243,7 @@ export default function Profile() {
               )}
             </div>
             {isGoogleConnected && (
-              <p className="mt-3 text-xs text-slate-400">
+              <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
                 Your account is linked to Google. You can sign in with either email/password or Google.
               </p>
             )}
@@ -249,12 +251,12 @@ export default function Profile() {
         </div>
 
         {/* Danger zone — Logout */}
-        <div className="rounded-2xl border border-red-100 bg-white shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-red-50 bg-red-50/40">
-            <h2 className="font-display text-base font-bold text-red-700">Danger Zone</h2>
+        <div className="rounded-2xl border border-danger-200 dark:border-danger-800 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-danger-100 dark:border-danger-900 bg-danger-50/40 dark:bg-danger-900/20">
+            <h2 className="font-display text-base font-bold text-danger-700 dark:text-danger-400">Danger Zone</h2>
           </div>
           <div className="px-6 py-5">
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               Logging out will clear your session. You'll need to sign in again to access your account.
             </p>
             {!logoutConfirm ? (
@@ -262,20 +264,21 @@ export default function Profile() {
                 id="logout-btn"
                 type="button"
                 onClick={() => setLogoutConfirm(true)}
-                className="w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700 active:bg-red-800 transition shadow-sm"
+                className="w-full rounded-xl bg-danger-600 py-3 text-sm font-semibold text-white hover:bg-danger-700 active:bg-danger-800 transition shadow-sm shadow-danger-600/25 flex items-center justify-center gap-2"
               >
+                <LogOut size={18} />
                 Log Out
               </button>
             ) : (
               <div className="space-y-3">
-                <p className="text-sm font-medium text-red-700 text-center">
+                <p className="text-sm font-medium text-danger-700 dark:text-danger-400 text-center">
                   Are you sure you want to log out?
                 </p>
                 <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => setLogoutConfirm(false)}
-                    className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+                    className="flex-1 rounded-xl border border-slate-200 dark:border-slate-600 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                   >
                     Cancel
                   </button>
@@ -283,7 +286,7 @@ export default function Profile() {
                     id="logout-confirm-btn"
                     type="button"
                     onClick={handleLogout}
-                    className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition"
+                    className="flex-1 rounded-xl bg-danger-600 py-2.5 text-sm font-semibold text-white hover:bg-danger-700 transition shadow-sm shadow-danger-600/25"
                   >
                     Yes, Log Out
                   </button>

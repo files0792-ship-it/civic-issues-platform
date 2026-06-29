@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import SearchableDropdown from '../components/SearchableDropdown.jsx';
 import { getIndianStates, getIndianCities, getIndianStateName } from '../utils/indianLocations.js';
+import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 
 export default function SubmitIssue() {
@@ -12,6 +14,8 @@ export default function SubmitIssue() {
   const [selectedStateCode, setSelectedStateCode] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -19,17 +23,73 @@ export default function SubmitIssue() {
   const states = useMemo(() => getIndianStates(), []);
   const cities = useMemo(() => getIndianCities(selectedStateCode), [selectedStateCode]);
 
+  // Handle image preview
+  useMemo(() => {
+    if (image) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(image);
+    } else {
+      setImagePreview(null);
+    }
+  }, [image]);
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        setImage(file);
+      } else {
+        toast.error('Please upload an image file');
+      }
+    }
+  };
+
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setImage(e.target.files[0]);
+    }
+  };
+
+  const removeImage = () => {
+    setImage(null);
+    setImagePreview(null);
+  };
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setSuccess('');
     
+    if (!title.trim()) {
+      toast.error('Please enter a title');
+      return;
+    }
+    if (!description.trim()) {
+      toast.error('Please enter a description');
+      return;
+    }
     if (!selectedStateCode) {
-      setError('Please select a state.');
+      toast.error('Please select a state');
       return;
     }
     if (!selectedCity) {
-      setError('Please select a city.');
+      toast.error('Please select a city');
       return;
     }
     
@@ -48,13 +108,13 @@ export default function SubmitIssue() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       if (data.duplicateWarning) {
-        setSuccess(`Submitted. Note: ${data.duplicateWarning.message}.`);
+        toast.success(`Submitted. Note: ${data.duplicateWarning.message}`);
       } else {
-        setSuccess('Issue submitted successfully.');
+        toast.success('Issue submitted successfully');
       }
-      setTimeout(() => navigate('/'), 1200);
+      setTimeout(() => navigate('/'), 1500);
     } catch (err) {
-      setError(err.response?.data?.message || 'Submit failed');
+      toast.error(err.response?.data?.message || 'Submit failed');
     } finally {
       setSubmitting(false);
     }
@@ -62,38 +122,34 @@ export default function SubmitIssue() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="font-display text-3xl font-bold text-slate-900">Report an issue</h1>
-      <p className="mt-2 text-slate-600">
-        Add a photo, describe the problem, and choose the city where it occurred.
-      </p>
+      <div className="mb-8">
+        <h1 className="font-display text-3xl font-bold text-slate-900 dark:text-white">Report an issue</h1>
+        <p className="mt-2 text-slate-600 dark:text-slate-400">
+          Add a photo, describe the problem, and choose the city where it occurred.
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-        {error && (
-          <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
-        )}
-        {success && (
-          <p className="rounded-lg bg-emerald-50 px-4 py-2 text-sm text-emerald-800">{success}</p>
-        )}
-
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-slate-700">Title</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Title</label>
           <input
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
-            placeholder="Short summary"
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 outline-none ring-primary-500 focus:ring-2 transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+            placeholder="Short summary of the issue"
           />
         </div>
+        
         <div>
-          <label className="block text-sm font-medium text-slate-700">Description</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description</label>
           <textarea
             required
             rows={4}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-civic-500 focus:ring-2"
-            placeholder="What happened? Where in the city?"
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 outline-none ring-primary-500 focus:ring-2 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 resize-none"
+            placeholder="What happened? Where in the city? Provide as much detail as possible."
           />
         </div>
 
@@ -122,21 +178,75 @@ export default function SubmitIssue() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Photo (optional)</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setImage(e.target.files?.[0] || null)}
-            className="mt-1 w-full text-sm"
-          />
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Photo (optional)</label>
+          <div
+            className={`relative border-2 border-dashed rounded-xl p-8 transition-all ${
+              dragActive
+                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                : 'border-slate-300 dark:border-slate-600 hover:border-primary-400 dark:hover:border-primary-500'
+            }`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            {imagePreview ? (
+              <div className="relative">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <X size={20} className="text-slate-600 dark:text-slate-400" />
+                </button>
+              </div>
+            ) : (
+              <div className="text-center">
+                <Upload className="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" />
+                <div className="mt-4">
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <span className="font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500">
+                      Upload a file
+                    </span>
+                    <span className="text-slate-500 dark:text-slate-400"> or drag and drop</span>
+                  </label>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </div>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  PNG, JPG, GIF up to 10MB
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-xl bg-civic-600 py-3 font-semibold text-white hover:bg-civic-700 disabled:opacity-60 sm:w-auto sm:px-10"
+          className="w-full rounded-xl bg-primary-600 py-3.5 font-semibold text-white hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-primary-600/25 transition-all duration-200 flex items-center justify-center gap-2"
         >
-          {submitting ? 'Submitting…' : 'Submit report'}
+          {submitting ? (
+            <>
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              Submitting…
+            </>
+          ) : (
+            <>
+              <CheckCircle size={20} />
+              Submit report
+            </>
+          )}
         </button>
       </form>
     </div>

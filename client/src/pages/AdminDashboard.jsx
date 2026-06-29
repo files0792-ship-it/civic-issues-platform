@@ -9,6 +9,7 @@ import {
   getAllIndianCities,
   getIndianStateName,
 } from '../utils/indianLocations.js';
+import { FileText, Clock, CheckCircle, Users, Search, Trash2, TrendingUp } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [issues, setIssues] = useState([]);
@@ -93,26 +94,86 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-display text-3xl font-bold text-slate-900">Admin Dashboard</h1>
-        <p className="mt-1 text-slate-600">Manage civic issues, update status, and monitor community reports.</p>
+      <div className="mb-8">
+        <h1 className="font-display text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
+        <p className="mt-1 text-slate-600 dark:text-slate-400">Manage civic issues, update status, and monitor community reports.</p>
       </div>
 
-      <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      {/* Summary Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Issues</p>
+              <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{issues.length}</p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+              <FileText className="text-primary-600 dark:text-primary-400" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Pending</p>
+              <p className="mt-2 text-3xl font-bold text-warning-600 dark:text-warning-400">
+                {issues.filter(i => i.status === 'Pending').length}
+              </p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-warning-100 dark:bg-warning-900/30 flex items-center justify-center">
+              <Clock className="text-warning-600 dark:text-warning-400" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Resolved</p>
+              <p className="mt-2 text-3xl font-bold text-success-600 dark:text-success-400">
+                {issues.filter(i => i.status === 'Resolved').length}
+              </p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-success-100 dark:bg-success-900/30 flex items-center justify-center">
+              <CheckCircle className="text-success-600 dark:text-success-400" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">High Priority</p>
+              <p className="mt-2 text-3xl font-bold text-danger-600 dark:text-danger-400">
+                {issues.filter(i => i.predictedPriority >= 70).length}
+              </p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-danger-100 dark:bg-danger-900/30 flex items-center justify-center">
+              <TrendingUp className="text-danger-600 dark:text-danger-400" size={24} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
         <div className="mb-4">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">Search & Filters</h3>
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+            <Search size={16} />
+            Search & Filters
+          </h3>
           <div className="flex flex-wrap gap-3">
             <input
               type="search"
               placeholder="Search issues..."
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              className="min-w-[12rem] flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none ring-civic-500 focus:ring-2"
+              className="min-w-[12rem] flex-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm outline-none ring-primary-500 focus:ring-2 text-slate-900 dark:text-white placeholder:text-slate-400"
             />
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none ring-civic-500 focus:ring-2"
+              className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm outline-none ring-primary-500 focus:ring-2 text-slate-900 dark:text-white"
             >
               <option value="">All statuses</option>
               {ISSUE_STATUSES.map((s) => (
@@ -124,7 +185,7 @@ export default function AdminDashboard() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none ring-civic-500 focus:ring-2"
+              className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm outline-none ring-primary-500 focus:ring-2 text-slate-900 dark:text-white"
             >
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
@@ -155,23 +216,23 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-end gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-700">Priority:</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Priority:</span>
               <input
                 type="number"
                 placeholder="Min"
                 value={pMin}
                 onChange={(e) => setPMin(e.target.value)}
-                className="w-20 rounded-lg border border-slate-200 px-2 py-2 text-sm outline-none ring-civic-500 focus:ring-2"
+                className="w-20 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-2 text-sm outline-none ring-primary-500 focus:ring-2 text-slate-900 dark:text-white"
                 min="0"
                 max="100"
               />
-              <span className="text-slate-400">-</span>
+              <span className="text-slate-400 dark:text-slate-500">-</span>
               <input
                 type="number"
                 placeholder="Max"
                 value={pMax}
                 onChange={(e) => setPMax(e.target.value)}
-                className="w-20 rounded-lg border border-slate-200 px-2 py-2 text-sm outline-none ring-civic-500 focus:ring-2"
+                className="w-20 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-2 text-sm outline-none ring-primary-500 focus:ring-2 text-slate-900 dark:text-white"
                 min="0"
                 max="100"
               />
@@ -179,7 +240,7 @@ export default function AdminDashboard() {
             <button
               type="button"
               onClick={load}
-              className="rounded-xl bg-civic-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-civic-700 transition-colors"
+              className="rounded-xl bg-primary-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25"
             >
               Apply Filters
             </button>
@@ -187,38 +248,38 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-4 text-sm text-danger-600 dark:text-danger-400">{error}</p>}
 
       {loading ? (
         <div className="mt-8 flex items-center justify-center py-12">
-          <div className="text-slate-500">Loading issues...</div>
+          <div className="text-slate-500 dark:text-slate-400">Loading issues...</div>
         </div>
       ) : (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
           <div className="max-h-[70vh] overflow-x-auto overflow-y-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-              <thead className="bg-slate-50 sticky top-0 z-10">
+            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-left text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-6 py-4 font-semibold text-slate-700">Issue Details</th>
-                  <th className="px-6 py-4 font-semibold text-slate-700">Location</th>
-                  <th className="px-6 py-4 font-semibold text-slate-700">Status</th>
-                  <th className="px-6 py-4 font-semibold text-slate-700">Upvotes</th>
-                  <th className="px-6 py-4 font-semibold text-slate-700">Priority</th>
-                  <th className="px-6 py-4 font-semibold text-slate-700">Actions</th>
+                  <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Issue Details</th>
+                  <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Location</th>
+                  <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Status</th>
+                  <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Upvotes</th>
+                  <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Priority</th>
+                  <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {issues.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="max-w-xs px-6 py-4">
-                      <p className="font-medium text-slate-900 mb-1">{row.title}</p>
-                      <p className="line-clamp-2 text-sm text-slate-600">{row.description}</p>
+                      <p className="font-medium text-slate-900 dark:text-white mb-1">{row.title}</p>
+                      <p className="line-clamp-2 text-sm text-slate-600 dark:text-slate-400">{row.description}</p>
                       {row.createdBy?.name && (
-                        <p className="text-xs text-slate-500 mt-1">by {row.createdBy.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">by {row.createdBy.name}</p>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
-                      <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                      <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-700 px-2 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">
                         {row.location ?? '—'}
                       </span>
                     </td>
@@ -227,20 +288,20 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1">
-                        <span className="text-sm font-medium text-slate-900">{row.upvoteCount}</span>
-                        <span className="text-xs text-slate-500">votes</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{row.upvoteCount}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">votes</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1">
                         <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                          row.predictedPriority >= 70 ? 'bg-red-100 text-red-700' :
-                          row.predictedPriority >= 40 ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-green-100 text-green-700'
+                          row.predictedPriority >= 70 ? 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-300' :
+                          row.predictedPriority >= 40 ? 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-300' :
+                          'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300'
                         }`}>
                           {row.predictedPriority ?? '0'}
                         </span>
-                        <span className="text-xs text-slate-500">priority</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">priority</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -249,7 +310,7 @@ export default function AdminDashboard() {
                           value={row.status}
                           disabled={statusUpdatingId === row.id}
                           onChange={(e) => updateStatus(row.id, e.target.value, row.status)}
-                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none ring-civic-500 focus:ring-2 disabled:opacity-50"
+                          className="rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-1.5 text-sm outline-none ring-primary-500 focus:ring-2 disabled:opacity-50 text-slate-800 dark:text-slate-200"
                         >
                           {ISSUE_STATUSES.map((s) => (
                             <option key={s} value={s}>
@@ -260,9 +321,10 @@ export default function AdminDashboard() {
                         <button
                           type="button"
                           onClick={() => remove(row.id)}
-                          className="rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100 transition-colors"
+                          className="inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 p-1.5 text-slate-500 dark:text-slate-400 hover:bg-danger-50 dark:hover:bg-danger-900/20 hover:text-danger-600 dark:hover:text-danger-400 hover:border-danger-200 dark:hover:border-danger-800 transition-colors"
+                          title="Delete issue"
                         >
-                          Delete
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -271,7 +333,7 @@ export default function AdminDashboard() {
               </tbody>
             </table>
             {issues.length === 0 && (
-              <p className="p-8 text-center text-slate-500">No issues match filters.</p>
+              <p className="p-8 text-center text-slate-500 dark:text-slate-400">No issues match filters.</p>
             )}
           </div>
         </div>

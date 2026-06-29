@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import IssueCard from '../components/IssueCard.jsx';
 import SearchableDropdown from '../components/SearchableDropdown.jsx';
 import MapView from '../components/MapView.jsx';
+import Hero from '../components/Hero.jsx';
 import {
   getIndianStates,
   getIndianCities,
@@ -187,10 +188,11 @@ export default function Home() {
 
   return (
     <div>
+      <Hero />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-slate-900">Community feed</h1>
-          <p className="mt-1 text-slate-600">Civic issues by city — upvote to prioritize.</p>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Community feed</h1>
+          <p className="mt-1 text-slate-600 dark:text-slate-400">Civic issues by city — upvote to prioritize.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {['list', 'compact', 'map'].map((v) => (
