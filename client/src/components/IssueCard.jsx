@@ -2,6 +2,7 @@ import StatusBadge from './StatusBadge.jsx';
 import { ISSUE_STATUSES } from '../constants/issueStatus.js';
 import { MapPin, Calendar, MessageCircle, Eye, Clock } from 'lucide-react';
 import { useState } from 'react';
+import ImageViewer from './ImageViewer.jsx';
 
 // Helper function to format location display
 function formatLocation(issue) {
@@ -36,6 +37,7 @@ export default function IssueCard({
 }) {
   const displayLocation = formatLocation(issue);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   
   return (
     <article className="group overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-800 shadow-sm hover:shadow-xl hover:shadow-primary-500/10 transition-all duration-300 hover:-translate-y-1">
@@ -44,6 +46,12 @@ export default function IssueCard({
           {!imageLoaded && (
             <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-700" />
           )}
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(true)}
+            className="absolute inset-0 w-full h-full cursor-pointer"
+            aria-label="View full size image"
+          />
           <img
             src={issue.imageUrl}
             alt=""
@@ -51,6 +59,13 @@ export default function IssueCard({
             loading="lazy"
             onLoad={() => setImageLoaded(true)}
           />
+          {lightboxOpen && (
+            <ImageViewer
+              src={issue.imageUrl}
+              alt={issue.title}
+              onClose={() => setLightboxOpen(false)}
+            />
+          )}
           <div className="absolute top-3 right-3">
             <StatusBadge status={issue.status} />
           </div>

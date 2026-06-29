@@ -5,6 +5,10 @@ import IssueCard from '../components/IssueCard.jsx';
 import SearchableDropdown from '../components/SearchableDropdown.jsx';
 import MapView from '../components/MapView.jsx';
 import Hero from '../components/Hero.jsx';
+import SkeletonCard from '../components/SkeletonCard.jsx';
+import EmptyState from '../components/EmptyState.jsx';
+import ProgressTimeline from '../components/ProgressTimeline.jsx';
+import { Inbox, AlertCircle } from 'lucide-react';
 import {
   getIndianStates,
   getIndianCities,
@@ -278,7 +282,11 @@ export default function Home() {
       )}
 
       {loading ? (
-        <p className="mt-10 text-center text-slate-500">Loading issues…</p>
+        <div className="mt-8 space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonCard key={i} compact={view === 'compact'} />
+          ))}
+        </div>
       ) : view === 'map' ? (
         <MapView issues={issues} />
       ) : (
@@ -289,7 +297,11 @@ export default function Home() {
             </p>
           )}
           {issues.length === 0 ? (
-            <p className="text-slate-500">No issues match your filters.</p>
+            <EmptyState
+              icon={view === 'compact' ? Inbox : AlertCircle}
+              title="No issues found"
+              description={q || status || stateCode || city ? "Try adjusting your search or filters." : "No civic issues have been reported yet. Be the first!"}
+            />
           ) : (
             issues.map((issue) => (
               <IssueCard
@@ -304,6 +316,12 @@ export default function Home() {
               />
             ))
           )}
+        </div>
+      )}
+      {issues.length > 0 && !loading && view !== 'map' && (
+        <div className="mt-8 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Issue Progress Overview</h3>
+          <ProgressTimeline currentStatus={issues[0]?.status || 'Pending'} />
         </div>
       )}
     </div>

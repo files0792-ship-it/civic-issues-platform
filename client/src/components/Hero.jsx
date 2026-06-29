@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Users, CheckCircle } from 'lucide-react';
+import AnimatedCounter from './AnimatedCounter.jsx';
 
 export default function Hero() {
   return (
@@ -51,15 +52,21 @@ export default function Hero() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-6 pt-8 border-t border-slate-200 dark:border-slate-700">
               <div>
-                <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">10K+</div>
+                <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                  <AnimatedCounter value={10000} suffix="+" />
+                </div>
                 <div className="text-sm text-slate-600 dark:text-slate-400">Issues Reported</div>
               </div>
               <div>
-                <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">85%</div>
+                <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                  <AnimatedCounter value={85} suffix="%" />
+                </div>
                 <div className="text-sm text-slate-600 dark:text-slate-400">Resolution Rate</div>
               </div>
               <div>
-                <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">5K+</div>
+                <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                  <AnimatedCounter value={5000} suffix="+" />
+                </div>
                 <div className="text-sm text-slate-600 dark:text-slate-400">Active Users</div>
               </div>
             </div>

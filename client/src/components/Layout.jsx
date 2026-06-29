@@ -1,8 +1,9 @@
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../contexts/ThemeContext.jsx';
-import { Sun, Moon, Bell, Menu, X } from 'lucide-react';
+import NotificationDropdown from './NotificationDropdown.jsx';
+import { Sun, Moon, Menu, X } from 'lucide-react';
 
 const navCls = ({ isActive }) =>
   `rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
@@ -14,6 +15,7 @@ const navCls = ({ isActive }) =>
 export default function Layout({ children }) {
   const { user, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
@@ -58,12 +60,7 @@ export default function Layout({ children }) {
             </button>
 
             {/* Notification Bell */}
-            {user && (
-              <button className="relative rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200">
-                <Bell size={20} />
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-danger-500"></span>
-              </button>
-            )}
+            {user && <NotificationDropdown />}
 
             {!user ? (
               <>
@@ -101,10 +98,16 @@ export default function Layout({ children }) {
                     >
                       My Profile
                     </NavLink>
-                    <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    <button
+                      onClick={() => { navigate('/settings'); setProfileDropdownOpen(false); }}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
                       Settings
                     </button>
-                    <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    <button
+                      onClick={() => { navigate('/contact'); setProfileDropdownOpen(false); }}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
                       Help
                     </button>
                     <div className="border-t border-slate-200 dark:border-slate-700 mt-2 pt-2">
