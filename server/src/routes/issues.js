@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import path from 'path';
 import { Issue, ISSUE_STATUSES } from '../models/Issue.js';
+import { Notification } from '../models/Notification.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { uploadImage } from '../middleware/upload.js';
 import { jaccardSimilarity, combinedIssueText } from '../utils/textSimilarity.js';
@@ -63,6 +64,17 @@ router.patch('/:id/status', authenticate, async (req, res) => {
       { new: true }
     ).populate('createdBy', 'name email');
     if (!issue) return res.status(404).json({ message: 'Issue not found' });
+
+    if (issue.createdBy && issue.createdBy._id.toString() !== req.user.id) {
+      await Notification.create({
+        user: issue.createdBy._id,
+        type: 'status_change',
+        title: 'Status Update',
+        message: `"${issue.title}" has been marked as ${status}.`,
+        issueId: issue._id,
+      });
+    }
+
     res.json({ issue: shapeIssue(issue, req.user.id, req) });
   } catch {
     res.status(400).json({ message: 'Invalid request' });
@@ -176,7 +188,17 @@ router.post('/:id/upvote', authenticate, async (req, res) => {
     // Populate and return updated issue
     const populated = await Issue.findById(issue._id).populate('createdBy', 'name email');
     const response = shapeIssue(populated, uid, req);
-    
+
+    if (isUpvoting && populated.createdBy && populated.createdBy._id.toString() !== uid) {
+      await Notification.create({
+        user: populated.createdBy._id,
+        type: 'upvote',
+        title: 'New Upvote',
+        message: `Your report "${populated.title}" received an upvote.`,
+        issueId: populated._id,
+      });
+    }
+
     res.json({
       ...response,
       message: isUpvoting ? 'Upvote added successfully' : 'Upvote removed successfully'

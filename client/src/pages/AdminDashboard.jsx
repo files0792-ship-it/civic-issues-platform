@@ -61,6 +61,11 @@ export default function AdminDashboard() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
+  }, [load]);
+
   async function updateStatus(id, newStatus, previousStatus) {
     setError('');
     setStatusUpdatingId(id);

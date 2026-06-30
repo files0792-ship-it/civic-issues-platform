@@ -117,6 +117,11 @@ export default function Home() {
     fetchIssues();
   }, [fetchIssues]);
 
+  useEffect(() => {
+    const interval = setInterval(fetchIssues, 30000);
+    return () => clearInterval(interval);
+  }, [fetchIssues]);
+
   async function handleUpvote(issue) {
     if (!token) {
       alert('Please log in to upvote issues.');

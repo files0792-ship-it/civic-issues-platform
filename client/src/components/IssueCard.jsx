@@ -1,6 +1,6 @@
 import StatusBadge from './StatusBadge.jsx';
 import { ISSUE_STATUSES } from '../constants/issueStatus.js';
-import { MapPin, Calendar, MessageCircle, Eye, Clock } from 'lucide-react';
+import { MapPin, Calendar, Clock } from 'lucide-react';
 import { useState } from 'react';
 import ImageViewer from './ImageViewer.jsx';
 
@@ -126,19 +126,8 @@ export default function IssueCard({
           )}
         </div>
         
-        <div className="mt-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-700 pt-4">
-          <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-            <span className="inline-flex items-center gap-1">
-              <MessageCircle size={14} />
-              {Math.floor(Math.random() * 20)}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Eye size={14} />
-              {Math.floor(Math.random() * 100) + 10}
-            </span>
-          </div>
-          
-          {onUpvote && (
+        {onUpvote && (
+          <div className="mt-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-700 pt-4">
             <button
               type="button"
               onClick={() => onUpvote(issue)}
@@ -165,8 +154,8 @@ export default function IssueCard({
                 {issue.upvoteCount || 0}
               </span>
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </article>
   );

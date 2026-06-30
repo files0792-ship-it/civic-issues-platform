@@ -9,6 +9,7 @@ import issuesRoutes from './routes/issues.js';
 import adminRoutes from './routes/admin.js';
 import mlRoutes from './routes/ml.js';
 import citiesRoutes from './routes/cities.js';
+import notificationRoutes from './routes/notifications.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -38,6 +39,7 @@ app.use('/api/cities', citiesRoutes);
 app.use('/api/issues', issuesRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ml', mlRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Multer / validation errors
 app.use((err, _req, res, next) => {
